@@ -1196,7 +1196,7 @@ class GRPOTrainer(BaseTrainer):
                     }
                     with profiling_context(self, "vLLM.generate"):
                         if self.rollout_func is not None:
-                            rollout_prompts = ordered_set_of_prompts
+                            rollout_prompts = all_prompts
                             if rollout_prompts and is_conversational({"prompt": rollout_prompts[0]}):
                                 rollout_prompts = [
                                     apply_chat_template(
@@ -1227,7 +1227,8 @@ class GRPOTrainer(BaseTrainer):
                 all_prompt_ids, all_completion_ids, all_logprobs, all_extra_fields = obj_list[0]
 
                 # At this point, we only get 1 copy of each prompt, so we need to repeat them num_generations times
-                all_prompt_ids = [ids for ids in all_prompt_ids for _ in range(self.num_generations)]
+                if self.rollout_func is None:
+                    all_prompt_ids = [ids for ids in all_prompt_ids for _ in range(self.num_generations)]
 
                 process_slice = slice(
                     self.accelerator.process_index * len(prompts),
